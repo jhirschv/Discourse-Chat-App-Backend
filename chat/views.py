@@ -1,6 +1,6 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import (MyTokenObtainPairSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer)
+from .serializers import (MyTokenObtainPairSerializer, UserSerializer, UserRegistrationSerializer, MessageSerializer, ChatSessionSerializer, GuestRegistrationSerializer)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import (User, Message, ChatSession)
@@ -23,13 +23,38 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 class UserRegistrationView(APIView):
     def post(self, request):
-        serializer = User(data=request.data)
+        serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             if user:
                 tokens = get_tokens_for_user(user)
                 return Response({"tokens": tokens, "message": "User created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class GuestUserCreateAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        # Instantiate your serializer with empty data as your logic generates it
+        serializer = GuestRegistrationSerializer(data={})
+        if serializer.is_valid():
+            user, plain_password = serializer.save()  # Unpack the returned tuple
+
+            # Create token manually using the custom serializer with the plain password
+            token_serializer = MyTokenObtainPairSerializer(data={
+                'username': user.username,
+                'password': plain_password  # Use the plain password here
+            })
+
+            # Validate and generate tokens
+            if token_serializer.is_valid():
+                tokens = token_serializer.validated_data
+                return Response({
+                    'tokens': tokens,
+                    'message': 'Guest user created successfully'
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response(token_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -44,6 +69,19 @@ class UserDeleteAPIView(APIView):
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class ProfilePictureUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        print("Received request data:", request.data)  # Log the request data
+        user = request.user
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        print("Serializer errors:", serializer.errors)  # Log serializer errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
