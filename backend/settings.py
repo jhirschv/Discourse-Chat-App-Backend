@@ -34,7 +34,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['discourse-chat-07776d7da87a.herokuapp.com']
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "https://discourse-chat-app-frontend.vercel.app/",
 ]
 
 
