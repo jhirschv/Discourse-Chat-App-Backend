@@ -31,7 +31,7 @@ SECRET_KEY = 'django-insecure-oe7w*4crj-im0qdz*x5*r-jxgq6+us22jqhs8q0_zh4t#hy!q%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['discourse-chat-07776d7da87a.herokuapp.com']
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
